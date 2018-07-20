@@ -1,12 +1,14 @@
 import os
 import flask
+import sys
+import werkzeug
 
 def create_app(test_config=None): # Application Factory. Creates an instance of the Flask class and sets things up
 	app = flask.Flask(__name__) # __name__ is the name of the current Python module
 	
 	# Splatalogue endpoint. returns an array of objects made from splatalogue.csv
-	@app.route("/splatalogue", methods=("GET",))
-	def splatalogue():
+	@app.route("/splatalogue/<name>,<minfreq>,<maxfreq>", methods=("GET",))
+	def splatalogue(name, minfreq, maxfreq):
 		def makeDict(data):
 			# line_id : species_id : s_name_noparens : chemical_name : 
 			# orderedfreq : resolved_QNs : sijmu2 :
@@ -34,13 +36,37 @@ def create_app(test_config=None): # Application Factory. Creates an instance of 
 					"top20"				: int(data[16])
 				}
 			)
+			
+		to_return = []
+		
 		file = open("spectral-data/splatalogue.csv")
-		lines = file.readlines()
+		lines = file.readlines() # lines is now an array of strings
 		for i in range(len(lines)):
 			words = lines[i].split(":") # Split(delimiter) separates the string and returns an array of strings
 			for ii in range(len(words)):
 				if(words[ii] == "NULL"):
 					words[ii] = "0"
 			lines[i] = makeDict(words)
-		return(flask.jsonify(lines))
+		
+		# lines is now an array of dictionaries
+		
+		# If minfreq and maxfreq are empty, set them to values which will always be true
+		if minfreq == "empty":
+			minfreq = 0
+		if maxfreq == "empty":
+			maxfreq = sys.maxsize # Maximum size for an integer without being automatically promoted to a long
+		
+		# apply filters to only return appropriate data
+		for line in lines:
+			if(name == "empty"):
+				if(line["ordered_freq"] > float(minfreq) and line["ordered_freq"] < float(maxfreq)):
+					to_return.append(line)
+			else:
+				if((line["chemical_name"].lower() == name.lower() or line["s_name_noparens"] == name) and (line["ordered_freq"] > float(minfreq) and line["ordered_freq"] < float(maxfreq))):
+					to_return.append(line)
+		# Check whether any results were found
+		if(to_return == []):
+			werkzeug.exceptions.abort(404, "No data matching filters")
+		else:
+			return(flask.jsonify(to_return))
 	return(app)

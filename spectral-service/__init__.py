@@ -1,12 +1,14 @@
 import os
 import flask
+import flask_cors
 import werkzeug
 
 def create_app(test_config=None): # Application Factory. Creates an instance of the Flask class and sets things up
 	app = flask.Flask(__name__) # __name__ is the name of the current Python module
+	flask_cors.CORS(app)
 
 	# Spectrum endpoint. Takes octile as an integer between 1 and 7 returns the data from the respectively numbered file in the form of List<List<double>>
-	@app.route("/spectrum/<octile>")
+	@app.route("/api/spectral/spectrum/<octile>")
 	def test(octile):
 		try:
 			int(octile)
@@ -23,5 +25,9 @@ def create_app(test_config=None): # Application Factory. Creates an instance of 
 				words[i] = float(words[i])
 			to_return.append(words)
 		return(flask.jsonify(to_return))
-
+	
+	app.run(port=8080)
+	
 	return(app)
+	
+create_app()

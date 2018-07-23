@@ -1,0 +1,112 @@
+{
+  "xmlns_prp": "Alma/ObsPrep/ObsProposal",
+  "xmlns_ent": "Alma/CommonEntity",
+  "prj_pI": "",
+  "prj_isCommissioning": false,
+  "prj_projectName": "",
+  "prj_simulationMode": false,
+  "xmlns_prj": "Alma/ObsPrep/ObsProject",
+  "prj_letterGrade": "D",
+  "prj_isCalibration": false,
+  "xmlns_sbl": "Alma/ObsPrep/SchedBlock",
+  "prj_consensusReport": "",
+  "prj_timeOfCreation": "0000-00-00",
+  "prj_taPhase2Comments": "",
+  "prj_ObsProjectEntity": {
+    "entityIdEncrypted": "-- id encryption not implemented --",
+    "schemaVersion": 13,
+    "entityTypeName": "ObsProject",
+    "entityId": "new_project",
+    "documentVersion": 1
+  },
+  "prj_manualMode": false,
+  "prj_staffProjectNote": "",
+  "xmlns_orv": "Alma/ObsPrep/ObsReview",
+  "prj_version": 0,
+  "xsi_type": "prj:ObsProject",
+  "prj_ObsProposalRef": {
+    "entityTypeName": "ObsProposal",
+    "entityId": "new_proposal",
+    "documentVersion": 1
+  },
+  "xmlns_xsi": "http://www.w3.org/2001/XMLSchema-instance",
+  "prj_ObsProgram": {
+    "prj_ObsPlan": {
+      "prj_FlowControl": {
+        "prj_controlScript": ""
+      },
+      "prj_note": "",
+      "prj_ObsProjectRef": {
+        "entityTypeName": "ObsProject",
+        "entityId": "new_project",
+        "documentVersion": 1
+      },
+      "prj_DataProcessingParameters": {
+        "prj_rMSGoal": {
+          "unit": "Jy",
+          "content": 0
+        },
+        "prj_tBSensitivityGoal": {
+          "unit": "K",
+          "content": 0
+        },
+        "prj_velocityResolution": {
+          "val_centerVelocity": {
+            "unit": "km/s",
+            "content": 0
+          },
+          "dopplerCalcType": "RADIO",
+          "referenceSystem": "lsrk"
+        },
+        "projectType": "Continuum",
+        "prj_angularResolution": {
+          "unit": "arcsec",
+          "content": 0
+        }
+      },
+      "prj_runSciencePipeline": false,
+      "prj_scienceProcessingScript": "",
+      "prj_ObsUnitControl": {
+        "prj_CalibrationRequirements": {
+          "prj_pointingAccuracy": {
+            "unit": "arcsec",
+            "content": 0
+          }
+        },
+        "prj_userPriority": 0,
+        "prj_aggregatedExecutionCount": 1,
+        "prj_maximumTime": {
+          "unit": "s",
+          "content": 0
+        },
+        "prj_tacPriority": 0,
+        "arrayRequested": "TWELVE-M",
+        "prj_estimatedExecutionTime": {
+          "unit": "s",
+          "content": 0
+        }
+      },
+      "almatype": "APDM::ObsUnitSet",
+      "prj_UnitDependencies": {
+        "prj_delay": {
+          "unit": "s",
+          "content": 0
+        },
+        "prj_expression": "",
+        "prj_executionCount": 1
+      },
+      "prj_name": "ObsUnitSet",
+      "status": "NewPhase2",
+      "entityPartId": "X1622420004"
+    }
+  },
+  "schemaVersion": 13,
+  "xmlns_ps": "Alma/ObsPrep/ProjectStatus",
+  "prj_taMainComments": "",
+  "revision": 23,
+  "prj_code": "None Assigned",
+  "xmlns_oat": "Alma/ObsPrep/ObsAttachment",
+  "xmlns_val": "Alma/ValueTypes",
+  "almatype": "APDM::ObsProject",
+  "status": "NewPhase1"
+}

@@ -9,7 +9,7 @@ def create_app(test_config=None): # Application Factory. Creates an instance of 
 	flask_cors.CORS(app)
 
 	# Spectrum endpoint. Takes octile as an integer between 1 and 7 returns the data from the respectively numbered file in the form of List<List<double>>
-	@app.route("/api/spectral/spectrum/<octile>")
+	@app.route("/api/spectral/spectrum/<octile>", methods=("GET",))
 	def test(octile):
 		try:
 			int(octile)
@@ -28,8 +28,10 @@ def create_app(test_config=None): # Application Factory. Creates an instance of 
 		return(flask.jsonify(to_return))
 	
 	# Splatalogue endpoint. returns an array of objects made from splatalogue.csv
-	@app.route("/splatalogue/<name>,<minfreq>,<maxfreq>", methods=("GET",))
-	def splatalogue(name, minfreq, maxfreq):
+#	@app.route("/api/spectral/splatalogue/<name>,<minfreq>,<maxfreq>", methods=("GET",))
+	@app.route("/api/spectral/splatalogue", methods=("GET",))
+#	def splatalogue(name, minfreq, maxfreq):
+	def splatalogue():
 		def makeDict(data):
 			# line_id : species_id : s_name_noparens : chemical_name : 
 			# orderedfreq : resolved_QNs : sijmu2 :
@@ -40,9 +42,9 @@ def create_app(test_config=None): # Application Factory. Creates an instance of 
 				{
 					"line_id" 			: int(data[0]),
 					"species_id"		: int(data[1]),
-					"s_name_noparens" 	: str(data[2]),
-					"chemical_name"		: str(data[3]),
-					"ordered_freq"		: float(data[4]),
+					"s_name_noparens" 	: str(data[2]), # Transition
+					"chemical_name"		: str(data[3]), # Description
+					"ordered_freq"		: float(data[4]), # Sky frequency is ordered_freq. Rest frequency is ordered_freq/500
 					"resolved_QNs"		: str(data[5]),
 					"sijmu2"			: float(data[6]),
 					"lovas_int"			: str(data[7]),
@@ -63,7 +65,7 @@ def create_app(test_config=None): # Application Factory. Creates an instance of 
 		file = open("spectral-data/splatalogue.csv")
 		lines = file.readlines() # lines is now an array of strings
 		for i in range(len(lines)):
-			words = lines[i].split(":") # Split(delimiter) separates the string and returns an array of strings
+			words = lines[i].strip().split(":") # Split(delimiter) separates the string and returns an array of strings. Strip() removes whitespace at the beginning and end. Used to remove newline character
 			for ii in range(len(words)):
 				if(words[ii] == "NULL"):
 					words[ii] = "0"
@@ -71,27 +73,29 @@ def create_app(test_config=None): # Application Factory. Creates an instance of 
 		
 		# lines is now an array of dictionaries
 		
-		# If minfreq and maxfreq are empty, set them to values which will always be true
-		if minfreq == "empty":
-			minfreq = 0
-		if maxfreq == "empty":
-			maxfreq = sys.maxsize # Maximum size for an integer without being automatically promoted to a long
-		
-		# apply filters to only return appropriate data
-		for line in lines:
-			if(name == "empty"):
-				if(line["ordered_freq"] > float(minfreq) and line["ordered_freq"] < float(maxfreq)):
-					to_return.append(line)
-			else:
-				if((line["chemical_name"].lower() == name.lower() or line["s_name_noparens"] == name) and (line["ordered_freq"] > float(minfreq) and line["ordered_freq"] < float(maxfreq))):
-					to_return.append(line)
-		# Check whether any results were found
-		if(to_return == []):
-			werkzeug.exceptions.abort(404, "No data matching filters")
-		else:
-			return(flask.jsonify(to_return))
+	#	# If minfreq and maxfreq are empty, set them to values which will always be true
+	#	if minfreq == "empty":
+	#		minfreq = 0
+	#	if maxfreq == "empty":
+	#		maxfreq = sys.maxsize # Maximum size for an integer without being automatically promoted to a long
+	#	
+	#	# apply filters to only return appropriate data
+	#	for line in lines:
+	#		if(name == "empty"):
+	#			if(line["ordered_freq"] > float(minfreq) and line["ordered_freq"] < float(maxfreq)):
+	#				to_return.append(line)
+	#		else:
+	#			if((line["chemical_name"].lower() == name.lower() or line["s_name_noparens"] == name) and (line["ordered_freq"] > float(minfreq) and line["ordered_freq"] < float(maxfreq))):
+	#				to_return.append(line)
+	#	# Check whether any results were found
+	#	if(to_return == []):
+	#		werkzeug.exceptions.abort(404, "No data matching filters")
+	#	else:
+	#		return(flask.jsonify(to_return))
+	
+		return(flask.jsonify(lines[:10]))
 			
-		app.run(port=8080)
+	app.run(port=8080)
 		
 	return(app)
 	

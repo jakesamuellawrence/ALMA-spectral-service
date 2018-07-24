@@ -2,6 +2,7 @@ import os
 import sys
 
 import flask
+from flask import request
 import flask_cors
 import werkzeug
 
@@ -12,7 +13,7 @@ def create_app(test_config=None):
     app = flask.Flask(__name__)
     flask_cors.CORS(app)
 
-    @app.route('/api/spectral/spectrum/<octile>', methods=('GET',))
+    @app.route('/spectral/spectrum/<octile>', methods=('GET',))
     def spectrum(octile):
         # Spectrum endpoint. Takes octile as an integer between 1 and 7
         # returns the data from the respectively numbered file in the form of 
@@ -40,13 +41,11 @@ def create_app(test_config=None):
             to_return.append(words)
         return(flask.jsonify(to_return))
     
-#   @app.route('/api/spectral/splatalogue/<name>,<minfreq>,<maxfreq>', 
-#              methods=('GET',))
-    @app.route('/api/spectral/splatalogue', methods=('GET',))
-#   def splatalogue(name, minfreq, maxfreq):
+    @app.route('/spectral/splatalogue', methods=('GET', 'POST'))
     def splatalogue():
-        # Splatalogue endpoint. returns an array of objects made from 
-        # splatalogue.csv
+        # Splatalogue endpoint. Returns an array of objects made from 
+        # splatalogue.csv. If filter form is POSTed it will send back
+        # only the appropriate data
         def make_dict(data):
             # line_id : species_id : s_name_noparens : chemical_name : 
             # orderedfreq : resolved_QNs : sijmu2 :
@@ -75,8 +74,7 @@ def create_app(test_config=None):
                 }
             )
             
-        to_return = []
-        
+        # Stores all data from splatalogue.csv as an array of dictionaries
         file = open('spectral-data/splatalogue.csv')
         lines = file.readlines()
         for i in range(len(lines)):
@@ -85,40 +83,60 @@ def create_app(test_config=None):
                 if(words[ii] == 'NULL'):
                     words[ii] = '0'
             lines[i] = make_dict(words)
+            
+        # If filter data has been POSTed, remove unwanted requests
+        if request.method == 'POST':
+            # While loops are used because the length of lines changes when
+            # an item is removed
+            if request.form['transition'] != '':
+                i = 0
+                while i < len(lines):
+                    if (lines[i]['s_name_noparens']
+                        != request.form['transition']):
+                        del lines[i]
+                    else:
+                        i = i + 1
+            if request.form['description'] != '':
+                i = 0
+                while i < len(lines):
+                    if (lines[i]['chemical_name']
+                        != request.form['description']):
+                        del lines[i]
+                    else:
+                        i = i + 1
+            if request.form['minrest'] != '':
+                i = 0
+                while i < len(lines):
+                    if (lines[i]['orderedfreq']/1000 
+                        < float(request.form['minrest'])):
+                        del lines[i]
+                    else:
+                        i = i + 1
+            if request.form['maxrest'] != '':
+                i = 0
+                while i < len(lines):
+                    if (lines[i]['orderedfreq']/1000
+                        > float(request.form['maxrest'])):
+                        del lines[i]
+                    else:
+                        i = i + 1
+            if request.form['minsky'] != '':
+                i = 0
+                while i < len(lines):
+                    if (lines[i]['orderedfreq']/500 
+                        < float(request.form['minsky'])):
+                        del lines[i]
+                    else:
+                        i = i + 1
+            if request.form['maxsky'] != '':
+                i = 0
+                while i < len(lines):
+                    if (lines[i]['orderedfreq']/500
+                        > float(request.form['maxsky'])):
+                        del lines[i]
+                    else:
+                        i = i + 1
         
-        # If minfreq and maxfreq are empty, set them to values which will 
-        # always be be outside of the range in the given data
- #       if minfreq == 'empty':
- #           minfreq = 0
- #       if maxfreq == 'empty':
- #           maxfreq = sys.maxsize  # Assumed that ordered frequency will not
-                                   # be  larger than this
-        
-        # apply filters to only return appropriate data
-#       for line in lines:
-#            if name == 'empty':
- #               if (
-  #                  line['ordered_freq'] > float(minfreq) 
-   #                 and line['ordered_freq'] < float(maxfreq)
-    #               ):
-     #               to_return.append(line)
-      #      else:
-       #         if (
-        #            line['chemical_name'].lower() == name.lower() 
-         #           or line['s_name_noparens'] == name
-          #         ) 
-           #        and 
-            #       (
-             #       line['ordered_freq'] > float(minfreq) 
-              #      and line['ordered_freq'] < float(maxfreq))
-               #    ):
-                #    to_return.append(line)
-        # Check whether any results were found
-#        if(to_return == []):
-#            werkzeug.exceptions.abort(404, 'No data matching filters')
- #       else:
-  #          return(flask.jsonify(to_return))
-    
         return(flask.jsonify(lines))
             
     app.run(port=8080)
@@ -126,4 +144,5 @@ def create_app(test_config=None):
     return(app)
     
 create_app()
+
 

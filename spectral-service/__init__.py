@@ -41,8 +41,8 @@ def create_app(test_config=None):
             to_return.append(words)
         return flask.jsonify(to_return)
     
-    @app.route('/spectral/splatalogue', methods=('GET', 'POST'))
-    def splatalogue():
+    @app.route('/spectral/splatalogue/<page>', methods=('GET', 'POST'))
+    def splatalogue(page):
         # Splatalogue endpoint. Returns an array of objects made from 
         # splatalogue.csv. If filter form is POSTed it will send back
         # only the appropriate data
@@ -137,7 +137,11 @@ def create_app(test_config=None):
                     else:
                         i = i + 1
         
-        return flask.jsonify(lines)
+        # Return only the data needed for the current page
+        page_length = 10
+        page = int(page)
+        return flask.jsonify(lines[(page-1) * page_length 
+                                   : (page*page_length)])
             
     app.run(port=8080)
         

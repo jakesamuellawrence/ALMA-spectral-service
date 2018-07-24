@@ -39,7 +39,7 @@ def create_app(test_config=None):
             for i in range(len(words)):
                 words[i] = float(words[i])
             to_return.append(words)
-        return(flask.jsonify(to_return))
+        return flask.jsonify(to_return)
     
     @app.route('/spectral/splatalogue', methods=('GET', 'POST'))
     def splatalogue():
@@ -137,11 +137,11 @@ def create_app(test_config=None):
                     else:
                         i = i + 1
         
-        return(flask.jsonify(lines))
+        return flask.jsonify(lines)
             
     app.run(port=8080)
         
-    return(app)
+    return app
     
 create_app()
 

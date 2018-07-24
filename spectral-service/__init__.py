@@ -1,5 +1,6 @@
 import os
 import sys
+import math
 
 import flask
 from flask import request
@@ -18,6 +19,7 @@ def create_app(test_config=None):
         # Spectrum endpoint. Takes octile as an integer between 1 and 7
         # returns the data from the respectively numbered file in the form of 
         # List<List<double>>
+        # Validate that octile is a real number between 1 and 7 inclusive
         try:
             int(octile)
         except ValueError:
@@ -105,6 +107,14 @@ def create_app(test_config=None):
                     else:
                         i = i + 1
             if request.form['minrest'] != '':
+                # Validate that minrest is a real number
+                try:
+                    float(request.form['minrest'])
+                except ValueError:
+                    werkzeug.exceptions.abort(422,
+                                              'minrest could not be cast to '
+                                              'a float. minrest must be'
+                                              'a real number')
                 i = 0
                 while i < len(lines):
                     if (lines[i]['orderedfreq']/1000 
@@ -113,6 +123,14 @@ def create_app(test_config=None):
                     else:
                         i = i + 1
             if request.form['maxrest'] != '':
+                # Validate that maxrest is a real number
+                try:
+                    float(request.form['maxrest'])
+                except ValueError:
+                    werkzeug.exceptions.abort(422,
+                                              'maxrest could not be cast to '
+                                              'a float. minrest must be'
+                                              'a real number')
                 i = 0
                 while i < len(lines):
                     if (lines[i]['orderedfreq']/1000
@@ -121,6 +139,14 @@ def create_app(test_config=None):
                     else:
                         i = i + 1
             if request.form['minsky'] != '':
+                # Validate that minsky is a real number
+                try:
+                    float(request.form['minsky'])
+                except ValueError:
+                    werkzeug.exceptions.abort(422,
+                                              'minsky could not be cast to '
+                                              'a float. minrest must be'
+                                              'a real number')
                 i = 0
                 while i < len(lines):
                     if (lines[i]['orderedfreq']/500 
@@ -129,19 +155,40 @@ def create_app(test_config=None):
                     else:
                         i = i + 1
             if request.form['maxsky'] != '':
-                i = 0
+                # Validate that maxsky is a real number
+                try:
+                    float(request.form['maxsky'])
+                except ValueError:
+                    werkzeug.exceptions.abort(422,
+                                              'maxsky could not be cast to '
+                                              'a float. minrest must be'
+                                              'a real number')
                 while i < len(lines):
                     if (lines[i]['orderedfreq']/500
                         > float(request.form['maxsky'])):
                         del lines[i]
                     else:
                         i = i + 1
-        
-        # Return only the data needed for the current page
+         
         page_length = 10
-        page = int(page)
-        return flask.jsonify(lines[(page-1) * page_length 
-                                   : (page*page_length)])
+        # check that page is an int and is appropriate for the amount of 
+        # data returned
+        try:
+            page = int(page)
+        except ValueError:
+            werkzeug.exceptions.abort(422,
+                                      'page could not be cast to int. Page '
+                                      'must be a number.')
+        max_pages = math.ceil(len(lines)/page_length)                              
+        if page > max_pages or page < 1:
+            werkzeug.exceptions.abort(400,
+                                      'Page is outwith range of available '
+                                      'pages. Page must be between 1 and '
+                                      '{0}'.format(max_pages))
+        else:
+            # Return only the data needed for the current page
+            return flask.jsonify(lines[(page-1) * page_length 
+                                       : (page*page_length)])
             
     app.run(port=8080)
         

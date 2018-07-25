@@ -43,8 +43,35 @@ def create_app(test_config=None):
             to_return.append(words)
         return flask.jsonify(to_return)
     
-    @app.route('/spectral/splatalogue/<page>', methods=('GET', 'POST'))
-    def splatalogue(page):
+    @app.route('/spectral/splatalogue', methods=('POST',))
+    def splatalogue():
+        # Validate page and page_length are present
+        if request.args.get('page') is None:
+            werkzeug.exceptions.abort(400,
+                                      'A value for page was not sent when making '
+                                      'the request. Format the request as so: '
+                                      '/spectral/splatalogue?page=<page>'
+                                      '&page_length=<page_length>')
+        if request.args.get('page_length') is None:
+            werkzeug.exceptions.abort(400,
+                                      'A value for page_length was not sent '
+                                      'when making the request. '
+                                      'Format the request as so: '
+                                      '/spectral/splatalogue?page=<page>'
+                                      '&page_length=<page_length>')
+        try:                            
+            page = int(request.args.get('page'))
+        except ValueError:
+            werkzeug.exceptions.abort(422,
+                                      'page could not be cast to int. '
+                                      'Page must be an integer')
+        try:
+            page_length = int(request.args.get('page_length'))
+        except ValueError:
+            werkzeug.exceptions.abort(422,
+                                      'page_length could not be cast to an '
+                                      'int. page_length must be an integer')
+                                      
         # Splatalogue endpoint. Returns an array of objects made from 
         # splatalogue.csv. If filter form is POSTed it will send back
         # only the appropriate data
@@ -118,7 +145,6 @@ def create_app(test_config=None):
                                           'a float. minrest must be'
                                           'a real number')
         
-                                          
         # Stores all data from splatalogue.csv as an array of dictionaries
         # if it matches the filters
         to_return = []
@@ -144,16 +170,9 @@ def create_app(test_config=None):
                (maxsky == '' or float(words[4])/500 < maxsky)
                ):               
                 to_return.append(make_dict(words))
-         
-        page_length = 10
+                
         # check that page is an int and is appropriate for the amount of 
         # data returned
-        try:
-            page = int(page)
-        except ValueError:
-            werkzeug.exceptions.abort(422,
-                                      'page could not be cast to int. Page '
-                                      'must be a number.')
         max_pages = math.ceil(len(to_return)/page_length)                              
         if page > max_pages or page < 1:
             werkzeug.exceptions.abort(400,

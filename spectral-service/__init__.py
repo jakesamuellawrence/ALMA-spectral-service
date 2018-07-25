@@ -93,16 +93,16 @@ def create_app(test_config=None):
             if request.form['transition'] != '':
                 i = 0
                 while i < len(lines):
-                    if (lines[i]['s_name_noparens']
-                        != request.form['transition']):
+                    if (lines[i]['s_name_noparens'].lower()
+                        != request.form['transition'].lower()):
                         del lines[i]
                     else:
                         i = i + 1
             if request.form['description'] != '':
                 i = 0
                 while i < len(lines):
-                    if (lines[i]['chemical_name']
-                        != request.form['description']):
+                    if (lines[i]['chemical_name'].lower()
+                        != request.form['description'].lower()):
                         del lines[i]
                     else:
                         i = i + 1

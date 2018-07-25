@@ -75,8 +75,53 @@ def create_app(test_config=None):
                     'top20' : int(data[16])
                 }
             )
-            
+        
+        # Get filter inputs from the request
+        transition = request.form['transition']
+        description = request.form['description']
+        minrest = request.form['minrest']
+        maxrest = request.form['maxrest']
+        minsky = request.form['minsky']
+        maxsky = request.form['maxsky']
+        
+        # Validate the frequency filter inputs and cast them to floats
+        if minrest != '':
+            try:
+                minrest = float(minrest)
+            except ValueError:
+                werkzeug.exceptions.abort(422,
+                                          'minrest could not be cast to '
+                                          'a float. minrest must be'
+                                          'a real number')
+        if maxrest != '':
+            try:
+                maxrest = float(maxrest)
+            except ValueError:
+                werkzeug.exceptions.abort(422,
+                                          'maxrest could not be cast to '
+                                          'a float. minrest must be'
+                                          'a real number')
+        if minsky != '':
+            try:
+                minsky = float(minsky)
+            except ValueError:
+                werkzeug.exceptions.abort(422,
+                                          'minsky could not be cast to '
+                                          'a float. minrest must be'
+                                          'a real number')
+        if maxsky != '':
+            try:
+                maxsky = float(maxsky)
+            except ValueError:
+                werkzeug.exceptions.abort(422,
+                                          'maxsky could not be cast to '
+                                          'a float. minrest must be'
+                                          'a real number')
+        
+                                          
         # Stores all data from splatalogue.csv as an array of dictionaries
+        # if it matches the filters
+        to_return = []
         file = open('spectral-data/splatalogue.csv')
         lines = file.readlines()
         for i in range(len(lines)):
@@ -84,91 +129,21 @@ def create_app(test_config=None):
             for ii in range(len(words)):
                 if(words[ii] == 'NULL'):
                     words[ii] = '0'
-            lines[i] = make_dict(words)
-            
-        # If filter data has been POSTed, remove unwanted requests
-        if request.method == 'POST':
-            # While loops are used because the length of lines changes when
-            # an item is removed
-            if request.form['transition'] != '':
-                i = 0
-                while i < len(lines):
-                    if (lines[i]['s_name_noparens'].lower()
-                        != request.form['transition'].lower()):
-                        del lines[i]
-                    else:
-                        i = i + 1
-            if request.form['description'] != '':
-                i = 0
-                while i < len(lines):
-                    if (lines[i]['chemical_name'].lower()
-                        != request.form['description'].lower()):
-                        del lines[i]
-                    else:
-                        i = i + 1
-            if request.form['minrest'] != '':
-                # Validate that minrest is a real number
-                try:
-                    float(request.form['minrest'])
-                except ValueError:
-                    werkzeug.exceptions.abort(422,
-                                              'minrest could not be cast to '
-                                              'a float. minrest must be'
-                                              'a real number')
-                i = 0
-                while i < len(lines):
-                    if (lines[i]['orderedfreq']/1000 
-                        < float(request.form['minrest'])):
-                        del lines[i]
-                    else:
-                        i = i + 1
-            if request.form['maxrest'] != '':
-                # Validate that maxrest is a real number
-                try:
-                    float(request.form['maxrest'])
-                except ValueError:
-                    werkzeug.exceptions.abort(422,
-                                              'maxrest could not be cast to '
-                                              'a float. minrest must be'
-                                              'a real number')
-                i = 0
-                while i < len(lines):
-                    if (lines[i]['orderedfreq']/1000
-                        > float(request.form['maxrest'])):
-                        del lines[i]
-                    else:
-                        i = i + 1
-            if request.form['minsky'] != '':
-                # Validate that minsky is a real number
-                try:
-                    float(request.form['minsky'])
-                except ValueError:
-                    werkzeug.exceptions.abort(422,
-                                              'minsky could not be cast to '
-                                              'a float. minrest must be'
-                                              'a real number')
-                i = 0
-                while i < len(lines):
-                    if (lines[i]['orderedfreq']/500 
-                        < float(request.form['minsky'])):
-                        del lines[i]
-                    else:
-                        i = i + 1
-            if request.form['maxsky'] != '':
-                # Validate that maxsky is a real number
-                try:
-                    float(request.form['maxsky'])
-                except ValueError:
-                    werkzeug.exceptions.abort(422,
-                                              'maxsky could not be cast to '
-                                              'a float. minrest must be'
-                                              'a real number')
-                while i < len(lines):
-                    if (lines[i]['orderedfreq']/500
-                        > float(request.form['maxsky'])):
-                        del lines[i]
-                    else:
-                        i = i + 1
+            # Check if it matches filters
+            if (
+               (transition == '' or transition.lower() == words[2].lower())
+               and
+               (description == '' or description.lower() == words[3].lower())
+               and
+               (minrest == '' or float(words[4])/1000 > minrest)
+               and
+               (maxrest == '' or float(words[4])/1000 < maxrest)
+               and
+               (minsky == '' or float(words[4])/500 > minsky)
+               and
+               (maxsky == '' or float(words[4])/500 < maxsky)
+               ):               
+                to_return.append(make_dict(words))
          
         page_length = 10
         # check that page is an int and is appropriate for the amount of 
@@ -179,16 +154,16 @@ def create_app(test_config=None):
             werkzeug.exceptions.abort(422,
                                       'page could not be cast to int. Page '
                                       'must be a number.')
-        max_pages = math.ceil(len(lines)/page_length)                              
+        max_pages = math.ceil(len(to_return)/page_length)                              
         if page > max_pages or page < 1:
             werkzeug.exceptions.abort(400,
                                       'Page is outwith range of available '
                                       'pages. Page must be between 1 and '
                                       '{0}'.format(max_pages))
-        else:
-            # Return only the data needed for the current page
-            return flask.jsonify(lines[(page-1) * page_length 
-                                       : (page*page_length)])
+ 
+        # Return only the data needed for the current page
+        return flask.jsonify(to_return[(page-1) * page_length 
+                                   : (page*page_length)])
             
     app.run(port=8080)
         

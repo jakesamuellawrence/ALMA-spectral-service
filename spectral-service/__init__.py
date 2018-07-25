@@ -44,34 +44,7 @@ def create_app(test_config=None):
         return flask.jsonify(to_return)
     
     @app.route('/spectral/splatalogue', methods=('POST',))
-    def splatalogue():
-        # Validate page and page_length are present
-        if request.args.get('page') is None:
-            werkzeug.exceptions.abort(400,
-                                      'A value for page was not sent when making '
-                                      'the request. Format the request as so: '
-                                      '/spectral/splatalogue?page=<page>'
-                                      '&page_length=<page_length>')
-        if request.args.get('page_length') is None:
-            werkzeug.exceptions.abort(400,
-                                      'A value for page_length was not sent '
-                                      'when making the request. '
-                                      'Format the request as so: '
-                                      '/spectral/splatalogue?page=<page>'
-                                      '&page_length=<page_length>')
-        try:                            
-            page = int(request.args.get('page'))
-        except ValueError:
-            werkzeug.exceptions.abort(422,
-                                      'page could not be cast to int. '
-                                      'Page must be an integer')
-        try:
-            page_length = int(request.args.get('page_length'))
-        except ValueError:
-            werkzeug.exceptions.abort(422,
-                                      'page_length could not be cast to an '
-                                      'int. page_length must be an integer')
-                                      
+    def splatalogue():                              
         # Splatalogue endpoint. Returns an array of objects made from 
         # splatalogue.csv. If filter form is POSTed it will send back
         # only the appropriate data
@@ -102,6 +75,39 @@ def create_app(test_config=None):
                     'top20' : int(data[16])
                 }
             )
+        
+        # Get page and page_length from URL arguments and validate they exist
+        # and are numbers
+        if request.args.get('page') is None:
+            werkzeug.exceptions.abort(400,
+                                      'A value for page was not sent when '
+                                      'making the request. '
+                                      'Format the request as so: '
+                                      '/spectral/splatalogue?page=<page>'
+                                      '&page_length=<page_length>')
+        if request.args.get('page_length') is None:
+            werkzeug.exceptions.abort(400,
+                                      'A value for page_length was not sent '
+                                      'when making the request. '
+                                      'Format the request as so: '
+                                      '/spectral/splatalogue?page=<page>'
+                                      '&page_length=<page_length>')
+        try:                            
+            page = int(request.args.get('page'))
+        except ValueError:
+            werkzeug.exceptions.abort(422,
+                                      'page could not be cast to int. '
+                                      'Page must be an number')
+        try:
+            page_length = int(request.args.get('page_length'))
+        except ValueError:
+            werkzeug.exceptions.abort(422,
+                                      'page_length could not be cast to an '
+                                      'int. page_length must be an number')
+        if page < 1:
+            werkzeug.exceptions.abort(400,
+                                      'page is out of range. page must be '
+                                      'more than 0')
         
         # Get filter inputs from the request
         transition = request.form['transition']
@@ -146,11 +152,14 @@ def create_app(test_config=None):
                                           'a real number')
         
         # Stores all data from splatalogue.csv as an array of dictionaries
-        # if it matches the filters
+        # if it matches the filters, up to the number required for the
+        # given page
         to_return = []
         file = open('spectral-data/splatalogue.csv')
         lines = file.readlines()
-        for i in range(len(lines)):
+        i = 0
+        found = 0
+        while i < len(lines) and found < page*page_length:
             words = lines[i].strip().split(':')
             for ii in range(len(words)):
                 if(words[ii] == 'NULL'):
@@ -168,21 +177,20 @@ def create_app(test_config=None):
                (minsky == '' or float(words[4])/500 > minsky)
                and
                (maxsky == '' or float(words[4])/500 < maxsky)
-               ):               
-                to_return.append(make_dict(words))
-                
-        # check that page is an int and is appropriate for the amount of 
-        # data returned
-        max_pages = math.ceil(len(to_return)/page_length)                              
-        if page > max_pages or page < 1:
+               ):
+                found = found + 1
+                if found > (page-1) * page_length:
+                    to_return.append(make_dict(words))
+            i = i + 1
+        
+        if found <= (page-1) * page_length:
+            max_pages = math.ceil(found/page_length)
             werkzeug.exceptions.abort(400,
-                                      'Page is outwith range of available '
-                                      'pages. Page must be between 1 and '
-                                      '{0}'.format(max_pages))
- 
-        # Return only the data needed for the current page
-        return flask.jsonify(to_return[(page-1) * page_length 
-                                   : (page*page_length)])
+                                      'page out of range. page must be '
+                                      'between 1 and {0}'.format(max_pages))
+        
+        
+        return flask.jsonify(to_return)
             
     app.run(port=8080)
         

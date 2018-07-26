@@ -14,7 +14,7 @@ def create_app(test_config=None):
     app.register_blueprint(spectrum.bp)
     app.register_blueprint(splatalogue.bp)
             
-    app.run(port=8080)
+    app.run(host='0.0.0.0', port=8080)
         
     return app
     

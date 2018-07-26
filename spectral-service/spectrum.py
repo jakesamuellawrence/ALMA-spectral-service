@@ -3,8 +3,7 @@ import werkzeug
 
 bp = flask.Blueprint('spectrum', __name__)
 
-cache = []
-cached_octile = 0
+cache = [[],[],[],[],[],[],[]]
 
 @bp.route('/spectral/spectrum/<octile>', methods=('GET',))
 def spectrum(octile):
@@ -13,20 +12,20 @@ def spectrum(octile):
     # List<List<double>>
     
     global cache
-    global cached_octile
     
-    validate_octile(octile)
+    octile = validate_octile(octile)
     
-    if cached_octile != octile:
-        cache = read_spectral_data('spectral-data/SKY.SPE000' + octile + '.trim')
-        cached_octile = octile
-    return flask.jsonify(cache)
+    if cache[octile-1] == []:
+        cache[octile-1] = read_spectral_data('spectral-data/SKY.SPE000' 
+                                              + str(octile) + '.trim')
+
+    return flask.jsonify(cache[octile-1])
     
    
 def validate_octile(octile):
     # Validate that octile is a real number between 1 and 7 inclusive
     try:
-        int(octile)
+        octile = int(octile)
     except ValueError:
         werkzeug.exceptions.abort(422, 
                                   'octile could not be cast to int. ' 
@@ -38,7 +37,8 @@ def validate_octile(octile):
                                   'octile ' + str(octile) + " doesn't "
                                   "exist. octile must be between 1 and 7 "
                                   "inclusive")
-                                  
+    return octile
+    
 def read_spectral_data(path):
     file = open(path, 'r')
     lines = file.readlines()

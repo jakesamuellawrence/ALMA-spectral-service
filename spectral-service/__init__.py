@@ -1,11 +1,5 @@
-import os
-import sys
-import math
-
 import flask
-from flask import request
 import flask_cors
-import werkzeug
 
 import spectrum
 import splatalogue
@@ -25,5 +19,3 @@ def create_app(test_config=None):
     return app
     
 create_app()
-
-

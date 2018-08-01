@@ -127,7 +127,8 @@ def get_filtered_data(page, page_length,
         werkzeug.exceptions.abort(400,
                                   'page out of bounds. Page must be between '
                                   '0 and '
-                                  '{0}'.format(math.ceil(len(splatalogue_data)/page_length)))
+                                  '{0}'.format(math.ceil(len(splatalogue_data)
+                                                         /page_length)))
     to_return = []
     for i in range(len(splatalogue_data)):
         to_return.append(make_dict(splatalogue_data[i]))
